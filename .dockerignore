@@ -1,0 +1,9 @@
+**
+!app/
+!bin/
+!config/
+!composer.*
+!routes/
+!seeders/
+!storage/
+!.env

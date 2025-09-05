@@ -1,0 +1,47 @@
+services:
+
+  nginx:
+    image: nginx:1.27.3-alpine-perl
+    ports:
+      - 8000:8000
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/template.conf
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      # MYSQL_ROOT_PASSWORD: 123123
+      MYSQL_RANDOM_ROOT_PASSWORD: yes
+      MYSQL_DATABASE: template
+      MYSQL_USER: speed
+      MYSQL_PASSWORD: 123123
+    ports:
+      - 3306:3306
+    volumes:
+      # - /data/docker/my_custom.cnf:/etc/mysql/conf.d/my_custom.cnf
+      # - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:7.4-alpine
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+
+  template:
+    image: template
+    expose:
+      - "9501"
+    depends_on:
+      - mysql
+      - redis
+    volumes:
+      - ./:/opt/www
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  default_net:
+    name: default_net
