@@ -63,4 +63,28 @@ class User extends Model implements JwtSubjectInterface
             'gender'        => $this->gender
         ];
     }
+
+    /**
+     * 设置时间返回格式
+     * @param [type] $value
+     * @return void
+     */
+    public function getCreatedAtAttribute($value)
+    {
+        return \Carbon\Carbon::parse($value)->format('Y-m-d H:i:s');
+    }
+
+    /**
+     * 访问器设置枚举值
+     * @param [type] $value
+     * @return string
+     */
+    public function getOnlineAttribute($value): string
+    {
+        return match ($value) {
+            1 => '在线',
+            2 => '离线',
+            default => '未知',
+        };
+    }
 }

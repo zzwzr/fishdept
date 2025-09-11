@@ -26,10 +26,10 @@ class UserSeeder extends Seeder
                 'mobile'        => $faker->regexify('1[3-9]\d{9}'),
                 'password'      => password_hash('123123', PASSWORD_BCRYPT),
                 'avatar'        => $faker->imageUrl(100, 100),
-                // 'email'         => $faker->email,
+                'email'         => $faker->email,
                 'gender'        => $faker->randomElement(['男', '女', '未知']),
                 // 'is_verified'   => $faker->randomElement([1, 2]),
-                // 'last_login_at' => $faker->dateTimeThisYear()->format('Y-m-d H:i:s'),
+                'last_login_at' => $faker->dateTimeThisYear()->format('Y-m-d H:i:s'),
             ]);
         }
     }
