@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('avatar')->default('')->comment('头像地址');
             $table->string('email')->default('')->comment('邮箱');
             $table->char('gender', 10)->default('未知')->comment('性别');
-            $table->tinyIncrements('status')->default(1)->comment('状态，1：正常，2：异常');
+            $table->tinyInteger('status')->default(1)->comment('状态，1：正常，2：异常');
             $table->dateTime('last_login_at')->nullable()->comment('最后登录时间');
 
             $table->datetimes();
