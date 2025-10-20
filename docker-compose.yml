@@ -5,14 +5,14 @@ services:
     ports:
       - 8000:8000
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/template.conf
+      - ./nginx.conf:/etc/nginx/conf.d/fishdept.conf
 
   mysql:
     image: mysql:8.0
     environment:
       # MYSQL_ROOT_PASSWORD: 123123
       MYSQL_RANDOM_ROOT_PASSWORD: yes
-      MYSQL_DATABASE: template
+      MYSQL_DATABASE: fishdept
       MYSQL_USER: speed
       MYSQL_PASSWORD: 123123
     ports:
@@ -29,8 +29,8 @@ services:
     volumes:
       - redis_data:/data
 
-  template:
-    image: template
+  fishdept:
+    image: fishdept
     expose:
       - "9501"
     depends_on:
