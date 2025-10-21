@@ -1,0 +1,28 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: docker
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install PHP dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Build Docker image
+        run: docker build -t fishdept .
+
+      - name: Push image to Aliyun Registry
+        env:
+          REGISTRY: crpi-lp6p2h0hg03aypr2.cn-beijing.personal.cr.aliyuncs.com
+          USERNAME: ${{ secrets.ALIYUN_USER }}
+          PASSWORD: ${{ secrets.ALIYUN_PASS }}
+        run: |
+          echo "$PASSWORD" | docker login $REGISTRY -u "$USERNAME" --password-stdin
+          docker tag fishdept $REGISTRY/zzwaa/fishdept:latest
+          docker push $REGISTRY/zzwaa/fishdept:latest
