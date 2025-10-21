@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: docker
+    runs-on: runner-ci
 
     steps:
       - uses: actions/checkout@v3
