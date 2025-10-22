@@ -7,7 +7,7 @@ use App\Controller\TestController;
 use App\Controller\UploadController;
 use App\Controller\UserController;
 use Hyperf\HttpServer\Router\Router;
-// 测试ci.sss
+// 测试ci.sssd
 Router::get('/api/v1/test', [TestController::class, 'test']);
 Router::post('/api/v1/upload', [UploadController::class, 'upload']);
 
