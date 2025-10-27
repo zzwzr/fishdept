@@ -33,6 +33,7 @@ services:
     image: fishdept
     expose:
       - "9501"
+      - "9502"
     depends_on:
       - mysql
       - redis

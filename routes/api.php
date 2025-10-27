@@ -3,11 +3,12 @@
 declare(strict_types=1);
 
 use App\Controller\LoginController;
+use App\Controller\OnlineUserController;
 use App\Controller\TestController;
 use App\Controller\UploadController;
 use App\Controller\UserController;
 use Hyperf\HttpServer\Router\Router;
-// 测试ci.sssdw
+
 Router::get('/api/v1/test', [TestController::class, 'test']);
 Router::post('/api/v1/upload', [UploadController::class, 'upload']);
 
@@ -16,7 +17,10 @@ Router::addGroup('/api/v1/user/', function(){
     Router::post('login', [LoginController::class, 'login']);
 });
 
-// 测试 DI 规则
+Router::addGroup('/api/v1/online/', function(){
+    Router::get('count', [OnlineUserController::class, 'getCount']);
+});
+
 Router::addGroup('/api/v1/user/', function(){
     Router::post('users', [UserController::class, 'create']);
     Router::delete('users', [UserController::class, 'delete']);

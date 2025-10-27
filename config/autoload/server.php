@@ -33,6 +33,18 @@ return [
                 'enable_request_lifecycle' => false,
             ],
         ],
+        [
+            'name' => 'ws',
+            'type' => Server::SERVER_WEBSOCKET,
+            'host' => env('APP_HOST', '127.0.0.1'),
+            'port' => intval(env('WS_PORT', 8000)),
+            'sock_type' => SWOOLE_SOCK_TCP,
+            'callbacks' => [
+                Event::ON_HAND_SHAKE => [Hyperf\WebSocketServer\Server::class, 'onHandShake'],
+                Event::ON_MESSAGE => [Hyperf\WebSocketServer\Server::class, 'onMessage'],
+                Event::ON_CLOSE => [Hyperf\WebSocketServer\Server::class, 'onClose'],
+            ],
+        ],
     ],
     'settings' => [
         Constant::OPTION_DAEMONIZE => env('DAEMONIZE'),

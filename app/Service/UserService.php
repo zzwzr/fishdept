@@ -33,7 +33,6 @@ class UserService
 
     public function getUser(array $filters = []): Collection
     {
-        
         return $this->userRepository->all($filters);
     }
 
@@ -45,5 +44,15 @@ class UserService
     public function deleteUser(string|int $id): int
     {
         return $this->userRepository->delete($id);
+    }
+
+    public function findOne($where): ?User
+    {
+        return $this->userRepository->findOne($where);
+    }
+
+    public function findOrCreateByBrowserId(string $browserId): User
+    {
+        return $this->userRepository->findOrCreateByBrowserId($browserId);
     }
 }

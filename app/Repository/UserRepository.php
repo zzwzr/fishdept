@@ -59,4 +59,23 @@ class UserRepository implements UserRepositoryInterface
 
         return $model->get();
     }
+
+    public function findOne(array $where = []): ?User
+    {
+        return $this->model->when($where, fn($q) => $q->where($where))->orderByDesc('id')->first();
+    }
+
+    public function findOrCreateByBrowserId(string $browserId): User
+    {
+        $user = $this->model->where('browser_id', $browserId)->first();
+        if (!$user) {
+            $user = $this->model->newInstance([
+                'browser_id'    => $browserId,
+                'name'          => 'guest_' . bin2hex(random_bytes(4)),
+            ]);
+            $user->save();
+        }
+
+        return $user;
+    }
 }

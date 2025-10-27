@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->string('browser_id')->default('')->comment('浏览器标识');
             $table->string('name')->default('')->comment('名称');
-            $table->char('mobile', 15)->unique()->default('')->comment('手机号码');
+            $table->char('mobile', 15)->unique()->default('')->comment('账号');
             $table->string('password')->default('')->comment('密码');
             $table->string('avatar')->default('')->comment('头像地址');
             $table->string('email')->default('')->comment('邮箱');

@@ -15,4 +15,7 @@ return [
         \Hyperf\Validation\Middleware\ValidationMiddleware::class,
         \App\Middleware\CorsMiddleware::class,
     ],
+    'ws' => [
+        // websocket 中间件
+    ]
 ];
