@@ -45,3 +45,13 @@ function withAdditional(string $message = 'success', int $code = 0): array
         'message' => $message,
     ];
 }
+
+function generateRandomCode(int $length = 8): string
+{
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $result = '';
+    for ($i = 0; $i < $length; $i++) {
+        $result .= $characters[random_int(0, strlen($characters) - 1)];
+    }
+    return $result;
+}

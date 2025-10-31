@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controller\LoginController;
 use App\Controller\OnlineUserController;
+use App\Controller\RoomController;
 use App\Controller\TestController;
 use App\Controller\UploadController;
 use App\Controller\UserController;
@@ -19,6 +20,11 @@ Router::addGroup('/api/v1/user/', function(){
 
 Router::addGroup('/api/v1/online/', function(){
     Router::get('count', [OnlineUserController::class, 'getCount']);
+});
+
+Router::addGroup('/api/v1/', function(){
+    Router::post('room', [RoomController::class, 'create']);
+    Router::get('room', [RoomController::class, 'index']);
 });
 
 Router::addGroup('/api/v1/user/', function(){
