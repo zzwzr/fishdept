@@ -6,7 +6,7 @@ namespace App\Request\Room;
 
 use Hyperf\Validation\Request\FormRequest;
 
-class CreateRequest extends FormRequest
+class InfoRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

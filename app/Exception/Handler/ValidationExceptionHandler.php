@@ -4,23 +4,23 @@ namespace App\Exception\Handler;
 
 use Hyperf\ExceptionHandler\ExceptionHandler;
 use Hyperf\HttpMessage\Stream\SwooleStream;
-use Swow\Psr7\Message\ResponsePlusInterface;
+use Psr\Http\Message\ResponseInterface;
 use Throwable;
 use Hyperf\Validation\ValidationException;
 use Fig\Http\Message\StatusCodeInterface;
 
 class ValidationExceptionHandler extends ExceptionHandler
 {
-    public function handle(Throwable $throwable, ResponsePlusInterface $response)
+    public function handle(Throwable $throwable, ResponseInterface $response)
     {
         $this->stopPropagation();
 
         $body = $throwable->validator->errors()->first();
-        if (! $response->hasHeader('content-type')) {
-            $response = $response->addHeader('content-type', 'application/json; charset=utf-8');
-        }
-        return $response->setStatus(StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY)
-                        ->setBody(new SwooleStream(json_encode(['code' => $throwable->status, 'message' => $body])));
+
+        return $response->withStatus(StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY)
+                        ->withHeader('Content-type', 'application/json; charset=utf-8')
+                        ->withHeader('Access-Control-Allow-Origin', '*')
+                        ->withBody(new SwooleStream(json_encode(['code' => $throwable->status, 'message' => $body])));
     }
 
     /**

@@ -8,19 +8,24 @@ use Hyperf\Redis\Redis;
 
 class RoomService
 {
+    // browser mapping roomid
+    private $browserRoom = 'browser_room:';
+
+    // romm hash details
+    private $room = 'room:';
+
+    // romm set list
+    private $rooms = 'rooms:';
+
     public function __construct(
         protected Redis $redis
     ) {}
 
-    /**
-     * 创建房间
-     */
     public function createRoom(string $roomName, string $browserId = ''): string
     {
         $roomId = generateRandomCode();
-        $key = "room:{$roomId}";
+        $key = $this->room . $roomId;
 
-        // 初始化房间数据
         $this->redis->hMSet($key, [
             'name'          => $roomName,
             'player1'       => $browserId,
@@ -29,19 +34,15 @@ class RoomService
             'created_at'    => date('Y-m-d H:i:s')
         ]);
 
-        $this->redis->sAdd('rooms', $roomId);
+        $this->redis->sAdd($this->rooms, $roomId);
 
-        // 额外建立浏览器ID到房间的映射
-        $this->redis->set("browser_room:{$browserId}", $roomId);
+        $this->redis->set($this->browserRoom . $browserId, $roomId);
         return $roomId;
     }
 
-    /**
-     * 获取房间列表
-     */
     public function listRooms($search = ''): array
     {
-        $roomIds = $this->redis->sMembers('rooms');
+        $roomIds = $this->redis->sMembers($this->rooms);
         $rooms = [];
 
         if ($search) {
@@ -54,11 +55,11 @@ class RoomService
         return $rooms;
     }
 
-    /**
-     * 获取当前浏览器是否在房间中
-     * @param string $browserId
-     * @return array|null
-     */
+    public function infoRoom($roomId): array
+    {
+        return $this->rooms($roomId);
+    }
+
     public function getRoomByBrowserId(string $browserId): ?array
     {
         $roomId = $this->redis->get("browser_room:{$browserId}");
@@ -75,6 +76,64 @@ class RoomService
         $data['room_id'] = $roomId;
         return $data;
     }
+
+    public function joinRoom(string $roomId, string $browserId): bool
+    {
+        $roomKey = "room:{$roomId}";
+        if (! $this->redis->exists($roomKey)) {
+            return false;
+        }
+        $userRoomKey = $this->browserRoom . $browserId;
+
+        $oldRoomId = $this->redis->get($userRoomKey);
+        if ($oldRoomId && $oldRoomId !== $roomId) {
+            $this->leaveRoom($oldRoomId, $browserId);
+        }
+
+        $player1 = $this->redis->hGet($roomKey, 'player1');
+        $player2 = $this->redis->hGet($roomKey, 'player2');
+
+        if (empty($player1)) {
+            $this->redis->hSet($roomKey, 'player1', $browserId);
+        } elseif (empty($player2)) {
+            $this->redis->hSet($roomKey, 'player2', $browserId);
+            $this->redis->hSet($roomKey, 'status', 'ready');
+        } else {
+            return false;
+        }
+
+        // 4. 更新映射
+        $this->redis->set($userRoomKey, $roomId);
+
+        return true;
+    }
+
+    public function leaveRoom(string $roomId, string $browserId): void
+    {
+        $roomKey = "room:{$roomId}";
+        if (! $this->redis->exists($roomKey)) {
+            return;
+        }
+
+        $player1 = $this->redis->hGet($roomKey, 'player1');
+        $player2 = $this->redis->hGet($roomKey, 'player2');
+
+        if ($player1 === $browserId) {
+            $this->redis->hSet($roomKey, 'player1', '');
+        }
+        if ($player2 === $browserId) {
+            $this->redis->hSet($roomKey, 'player2', '');
+        }
+
+        if (empty($player1) && empty($player2)) {
+
+            $this->redis->hSet($roomKey, 'status', 'waiting');
+        }
+
+        // 删除用户的映射关系
+        $this->redis->del("user_room:{$browserId}");
+    }
+
 
     /**
      * 查询房间
@@ -99,31 +158,5 @@ class RoomService
             'count'     => $count,
             'status'    => $data['status'],
         ];
-    }
-
-    /**
-     * 加入房间
-     */
-    public function joinRoom(string $roomId, string $userId): bool
-    {
-        $key = "room:{$roomId}";
-        if (!$this->redis->exists($key)) {
-            return false;
-        }
-
-        $player1 = $this->redis->hGet($key, 'player1');
-        $player2 = $this->redis->hGet($key, 'player2');
-
-        if (empty($player1)) {
-            $this->redis->hSet($key, 'player1', $userId);
-        } elseif (empty($player2)) {
-            $this->redis->hSet($key, 'player2', $userId);
-            $this->redis->hSet($key, 'status', 'ready');
-        } else {
-            // 房间已满
-            return false;
-        }
-
-        return true;
     }
 }

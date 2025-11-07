@@ -6,7 +6,7 @@ namespace App\Request\Room;
 
 use Hyperf\Validation\Request\FormRequest;
 
-class CreateRequest extends FormRequest
+class JoinRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,7 +22,7 @@ class CreateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'          => 'required',
+            'number'        => 'required',
             'browser_id'    => 'required'
         ];
     }

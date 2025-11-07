@@ -25,6 +25,8 @@ Router::addGroup('/api/v1/online/', function(){
 Router::addGroup('/api/v1/', function(){
     Router::post('room', [RoomController::class, 'create']);
     Router::get('room', [RoomController::class, 'index']);
+    Router::get('room/info', [RoomController::class, 'info']);
+    Router::post('room/join', [RoomController::class, 'join']);
 });
 
 Router::addGroup('/api/v1/user/', function(){
