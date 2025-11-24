@@ -9,7 +9,7 @@ jobs:
     runs-on: runner-ci
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install PHP dependencies
         run: composer install --no-dev --optimize-autoloader
