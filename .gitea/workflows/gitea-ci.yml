@@ -11,6 +11,9 @@ jobs:
     steps:
       - uses: zzw/actions@main
 
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+
       - name: Install PHP dependencies
         run: composer install --no-dev --optimize-autoloader
 
