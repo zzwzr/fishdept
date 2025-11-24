@@ -35,7 +35,7 @@ class TestController extends AbstractController
 
         // try {
         //     $data = [
-        //         'user_id'   => 123456,
+        //         'user_id'   => 1234567,
         //         'user_ip'   => '192.168.1.100',
         //         'goods_id'  => 1001,
         //         'sku'       => 100101,
