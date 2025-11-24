@@ -31,27 +31,29 @@ class TestController extends AbstractController
      */
     public function test(RequestInterface $request)
     {
-        try {
-            $data = [
-                'user_id'   => 123456,
-                'user_ip'   => '192.168.1.100',
-                'goods_id'  => 1001,
-                'sku'       => 100101,
-                'quantity'  => 1,
-                'time'      => time()
-            ];
-            $secret = config('AMQP_MESSAGE_SECRET');
-            $data['sign'] = generateSign($data, $secret);
+        UserLogger::info(date('Y-m-d H:i:s'));
 
-            $seckill = $this->container->get(SeckillServiceInterface::class);
-            $res = $seckill->push($data);
-            if (0 != $res['code']) {
-                throw new BusinessException(ErrorCode::SIGN_ERROR);
-            }
-            return new BaseResource($res['data']);
-        } catch (\Throwable $th) {
-            throw new BusinessException(10000, $th->getMessage());
-        }
+        // try {
+        //     $data = [
+        //         'user_id'   => 123456,
+        //         'user_ip'   => '192.168.1.100',
+        //         'goods_id'  => 1001,
+        //         'sku'       => 100101,
+        //         'quantity'  => 1,
+        //         'time'      => time()
+        //     ];
+        //     $secret = config('AMQP_MESSAGE_SECRET');
+        //     $data['sign'] = generateSign($data, $secret);
+
+        //     $seckill = $this->container->get(SeckillServiceInterface::class);
+        //     $res = $seckill->push($data);
+        //     if (0 != $res['code']) {
+        //         throw new BusinessException(ErrorCode::SIGN_ERROR);
+        //     }
+        //     return new BaseResource($res['data']);
+        // } catch (\Throwable $th) {
+        //     throw new BusinessException(10000, $th->getMessage());
+        // }
     }
 
     // public function test(RequestInterface $request)
