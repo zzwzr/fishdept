@@ -29,20 +29,20 @@ class DdosCommand extends HyperfCommand
     {
         $clientFactory = $this->container->get(ClientFactory::class);
         $client = $clientFactory->create([
-            'base_uri' => 'http://127.0.0.1:9501',
-            'timeout' => 2,
+            'base_uri' => 'http://127.0.0.1',
+            'timeout' => 10
         ]);
 
-        $total = 10; // 每秒N次
+        $total = 3000; // 每秒N次
 
         $this->line("开始压测: {$total} req/s\n", 'info');
         $start = microtime(true);
 
-        // 创建 1000 个协程
+        // 创建 N 个协程
         for ($i = 0; $i < $total; $i++) {
             Coroutine::create(function () use ($client, $i) {
                 try {
-                    $resp = $client->get('/api/v1/test', [
+                    $client->get('/api/v1/test', [
                         'json' => [
                             'username' => 'username',
                             'password' => '123456',
