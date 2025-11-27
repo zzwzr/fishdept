@@ -16,5 +16,5 @@ use Hyperf\JsonRpc\JsonRpcTransporter;
 
 return [
     // JsonRpcTransporter::class => JsonRpcPoolTransporter::class,
-    // \Hyperf\Contract\StdoutLoggerInterface::class => \App\Logger\StdoutLoggerFactory::class, // 日志输出到文件
+    \Hyperf\Contract\StdoutLoggerInterface::class => \App\Logger\StdoutLoggerFactory::class, // 日志输出到文件
 ];

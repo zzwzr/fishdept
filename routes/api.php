@@ -19,14 +19,15 @@ Router::addGroup('/api/v1/user/', function(){
 });
 
 Router::addGroup('/api/v1/online/', function(){
-    Router::get('count', [OnlineUserController::class, 'getCount']);
+    Router::get('count', [OnlineUserController::class, 'getCount'], ['operation' => '获取当前在线人数']);
 });
 
 Router::addGroup('/api/v1/', function(){
-    Router::post('room', [RoomController::class, 'create']);
-    Router::get('room', [RoomController::class, 'index']);
-    Router::get('room/info', [RoomController::class, 'info']);
-    Router::post('room/join', [RoomController::class, 'join']);
+    Router::post('room', [RoomController::class, 'create'], ['operation' => '创建房间']);
+    Router::get('room', [RoomController::class, 'index'], ['operation' => '房间列表']);
+    Router::get('room/info', [RoomController::class, 'info'], ['operation' => '查看房间信息']);
+    Router::post('room/join', [RoomController::class, 'join'], ['operation' => '加入房间']);
+    Router::get('room/first', [RoomController::class, 'first'], ['operation' => '查找自己所在的房间信息']);
 });
 
 Router::addGroup('/api/v1/user/', function(){

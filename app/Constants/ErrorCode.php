@@ -38,4 +38,7 @@ enum ErrorCode: int
 
     #[Message("服务不可用，请稍后重试！")]
     case SERVICE_UNAVAILABLE = 503;
+
+    #[Message("操作失败")]
+    case BUSINESS_ERROR = 10000;
 }

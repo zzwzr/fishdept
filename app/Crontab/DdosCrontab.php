@@ -9,7 +9,7 @@ use Hyperf\Logger\LoggerFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
-#[Crontab(name: "ddos test", rule: "* * * * *", callback: "execute", memo: "每2秒执行ddos任务")]
+#[Crontab(name: "ddos test", rule: "* * * * *", callback: "execute", enable: false, memo: "每2秒执行ddos任务")]
 class DdosCrontab
 {
     protected ContainerInterface $container;
@@ -20,15 +20,6 @@ class DdosCrontab
     {
         $this->container = $container;
         $this->logger = $loggerFactory->get('crontab', 'default');
-    }
-
-    /**
-     * 判断任务是否启用
-     */
-    public function isEnable(): bool
-    {
-        // 可以根据环境变量或其他配置决定是否启用
-        return (bool) env('DDOS_TASK_ENABLE', true);
     }
 
     /**

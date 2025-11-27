@@ -34,7 +34,7 @@ class WebSocketController implements OnMessageInterface, OnOpenInterface, OnClos
         $this->onlineUserService->increment();
 
         // 获取用户
-        $user = $this->userService->findOrCreateByBrowserId($browserId);
+        // $user = $this->userService->findOrCreateByBrowserId($browserId);
 
         // 绑定fd
         

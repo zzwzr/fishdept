@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Constants\ErrorCode;
+use App\Exception\BusinessException;
 use App\Request\Room\CreateRequest;
+use App\Request\Room\FirstRequest;
 use App\Request\Room\InfoRequest;
 use App\Request\Room\JoinRequest;
 use App\Resource\Common\BaseResource;
@@ -45,12 +48,22 @@ class RoomController
         return new BaseResource($result);
     }
 
+    public function first(FirstRequest $request)
+    {
+        $validated = $request->validated();
+
+        $result = $this->roomService->firstRoom($validated['browser_id']);
+        return new BaseResource($result);
+    }
+
     public function join(JoinRequest $request)
     {
         $validated = $request->validated();
 
         $result = $this->roomService->joinRoom($validated['number'], $validated['browser_id']);
-
-        return new BaseResource($result);
+        if (!$result) {
+            throw new BusinessException(ErrorCode::SERVER_ERROR, '加入房间失败，请重试');
+        }
+        return new BaseResource();
     }
 }
