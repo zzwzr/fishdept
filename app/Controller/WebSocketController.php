@@ -20,6 +20,7 @@ class WebSocketController implements OnMessageInterface, OnOpenInterface, OnClos
         protected OnlineUserService $onlineUserService,
     ) {}
 
+    // 房间锁，步骤锁
     public function onOpen($server, $request): void
     {
         $fd = $request->fd;

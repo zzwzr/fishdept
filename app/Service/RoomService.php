@@ -6,143 +6,80 @@ namespace App\Service;
 
 use App\Constants\ErrorCode;
 use App\Exception\BusinessException;
-use Hyperf\Redis\Redis;
+use App\Repository\RedisRepository;
 
 class RoomService
 {
-    // browser mapping roomid
-    private $browserRoom = 'browser_room:';
+    public function __construct(private RedisRepository $redisRepository) {}
 
-    // romm hash details
-    private $room = 'room:';
-
-    // romm set list
-    private $rooms = 'rooms:';
-
-    public function __construct(
-        protected Redis $redis
-    ) {}
-
-    public function createRoom(string $roomName, string $browserId = ''): string
+    public function createRoom(string $name, string $browserId): string
     {
         $roomId = generateRandomCode();
-        $key = $this->room . $roomId;
 
-        $this->redis->hMSet($key, [
-            'name'          => $roomName,
+        $this->redisRepository->createRoomHash($roomId, [
+            'name'          => $name,
             'player1'       => '',
             'player2'       => '',
-            'status'        => 'waiting',
-            'created_at'    => date('Y-m-d H:i:s')
+            'status'        => 1,
+            'created_at'    => date('Y-m-d H:i:s'),
         ]);
 
-        $this->redis->sAdd($this->rooms, $roomId);
-
+        $this->redisRepository->addRoomToSet($roomId);
         $this->joinRoom($roomId, $browserId);
+
         return $roomId;
     }
 
     public function joinRoom(string $roomId, string $browserId): void
     {
-        $roomKey = $this->room . $roomId;
-        if (!$this->redis->exists($roomKey)) {
-            throw new BusinessException(ErrorCode::BUSINESS_ERROR, '房间不存在！');
+        if (!$this->redisRepository->existsRoom($roomId)) {
+            throw new BusinessException(ErrorCode::BUSINESS_ERROR, '房间不存在');
         }
 
-        $oldRoomId = $this->redis->get($this->browserRoom . $browserId);
+        $old = $this->redisRepository->getBrowserRoom($browserId);
+        if ($old === $roomId) {
+            throw new BusinessException(ErrorCode::BUSINESS_ERROR, '已在该房间');
+        }
 
-        if ($oldRoomId == $roomId) {
-            throw new BusinessException(ErrorCode::BUSINESS_ERROR, '已在该房间！');
+        if ($old) $this->leaveRoom($old, $browserId);
+
+        $p1 = $this->redisRepository->getRoomField($roomId, 'player1');
+        $p2 = $this->redisRepository->getRoomField($roomId, 'player2');
+
+        if ($p1 === '') {
+            $this->redisRepository->setRoomField($roomId, 'player1', $browserId);
+        } elseif ($p2 === '') {
+            $this->redisRepository->setRoomField($roomId, 'player2', $browserId);
         } else {
-
-            $this->leaveRoom($oldRoomId, $browserId);
-
-            $player1 = $this->redis->hGet($roomKey, 'player1');
-            $player2 = $this->redis->hGet($roomKey, 'player2');
-
-            if (empty($player1)) {
-                $this->redis->hSet($roomKey, 'player1', $browserId);
-            } elseif (empty($player2)) {
-                $this->redis->hSet($roomKey, 'player2', $browserId);
-                $this->redis->hSet($roomKey, 'status', 'ready');
-            } else {
-                throw new BusinessException(ErrorCode::BUSINESS_ERROR, '房间已满员');
-            }
-
-            $this->redis->set($this->browserRoom . $browserId, $roomId);
-        }
-    }
-
-    public function listRooms($search = ''): array
-    {
-        $roomIds = $this->redis->sMembers($this->rooms);
-        $rooms = [];
-
-        if ($search) {
-            $rooms[] = $this->rooms($search);
-        } else {
-            foreach ($roomIds as $roomId) {
-                $rooms[] = $this->rooms($roomId);
-            }
-        }
-        return $rooms;
-    }
-
-    public function infoRoom($roomId): array
-    {
-        return $this->rooms($roomId);
-    }
-
-    public function firstRoom(string $browserId): array
-    {
-        $roomId = $this->browserIdGetRoomId($browserId);
-        if (!$roomId) return [];
-        return $this->rooms($roomId);
-    }
-
-    /**
-     * browserId get room id
-     * @param string $browserId
-     * @return string
-     */
-    public function browserIdGetRoomId(string $browserId): string
-    {
-        return $this->redis->get($this->browserRoom . $browserId) ?: '';
-    }
-
-    /**
-     * 离开 room
-     * @param string|bool $roomId
-     * @param string $browserId
-     * @return void
-     */
-    public function leaveRoom($roomId, string $browserId): void
-    {
-        $roomKey = $this->room . $roomId;
-        if (!$this->redis->exists($roomKey)) {
-            return;
+            throw new BusinessException(ErrorCode::BUSINESS_ERROR, '房间已满');
         }
 
-        $lua = $this->leaveRoomLua();
-        $this->redis->eval($lua, [$roomKey, $roomId, $browserId, $this->browserRoom . $browserId], 2);
+        $this->redisRepository->setBrowserRoom($browserId, $roomId);
     }
 
-    /**
-     * 查询房间
-     * @param [type] $roomId 房间编号
-     * @return array
-     */
-    private function rooms($roomId): array
+    public function listRooms(string $search = ''): array
     {
-        $data = $this->redis->hMGet($this->room . $roomId, ['name', 'player1', 'player2', 'status', 'created_at']);
+        $ids = $this->redisRepository->getAllRoomIds();
+        $result = [];
+
+        foreach ($ids as $id) {
+            $info = $this->infoRoom($id);
+            if (!$info) continue;
+            if ($search && !str_contains($info['name'], $search)) continue;
+            $result[] = $info;
+        }
+
+        return $result;
+    }
+
+    public function infoRoom(string $roomId): array
+    {
+        $data = $this->redisRepository->getRoomHash($roomId);
         if (empty($data['name'])) {
-            $this->redis->sRem($this->rooms, $roomId);
             return [];
         }
 
-        $count = 0;
-        if (!empty($data['player1'])) $count++;
-        if (!empty($data['player2'])) $count++;
+        $count = ($data['player1'] ? 1 : 0) + ($data['player2'] ? 1 : 0);
 
         return [
             'number'        => $roomId,
@@ -155,41 +92,71 @@ class RoomService
         ];
     }
 
-    /**
-     * 离开 room LUA 脚本组成（主要阻止检查了p1p2没有用户之后，未删除之前有人加进来了）
-     */
+    public function firstRoom(string $browserId): array
+    {
+        $roomId = $this->redisRepository->getBrowserRoom($browserId);
+        if (!$roomId) return [];
+
+        return $this->infoRoom($roomId);
+    }
+
+    public function leaveRoom(string $roomId, string $browserId): void
+    {
+        if (!$this->redisRepository->existsRoom($roomId)) return;
+
+        $keys = $this->redisRepository->getKeys($roomId);
+
+        $ret = $this->redisRepository->runLeaveRoomLua(
+            $this->leaveRoomLua(),
+        // return [
+        //     $this->room.$roomId,
+        //     $roomId,
+        //     $this->rooms,
+        //     $this->step.$roomId
+        // ];
+            // [$roomKey, $roomId, $this->rooms, $step, $browserId, $this->browserRoom . $browserId]
+            array_merge($keys, [$browserId, $this->redisRepository->browserRoomKey($browserId)])
+        );
+
+        // if ($ret === 1) {
+            // deleted
+        // }
+    }
+
     private function leaveRoomLua(): string
     {
         return <<<'LUA'
 local roomKey = KEYS[1]
 local roomId = KEYS[2]
+local rooms = KEYS[3]
+local step = KEYS[4]
+
 local browserId = ARGV[1]
 local browserRoomKey = ARGV[2]
 
--- 删除浏览器和房间的映射关系
 redis.call("DEL", browserRoomKey)
 
-local player1 = redis.call("HGET", roomKey, "player1")
-local player2 = redis.call("HGET", roomKey, "player2")
+local p1 = redis.call("HGET", roomKey, "player1")
+local p2 = redis.call("HGET", roomKey, "player2")
 
-if player1 == browserId then
+if p1 == browserId then
     redis.call("HSET", roomKey, "player1", "")
-elseif player2 == browserId then
+elseif p2 == browserId then
     redis.call("HSET", roomKey, "player2", "")
 end
 
--- 重新读取，判断是否都为空或 nil
-player1 = redis.call("HGET", roomKey, "player1")
-player2 = redis.call("HGET", roomKey, "player2")
+p1 = redis.call("HGET", roomKey, "player1")
+p2 = redis.call("HGET", roomKey, "player2")
 
-if (not player1 or player1 == "") and (not player2 or player2 == "") then
+if (not p1 or p1 == "") and (not p2 or p2 == "") then
     redis.call("DEL", roomKey)
-    redis.call("SREM", "rooms:", roomId)
-    return 1 -- 房间删除
+    redis.call("SREM", rooms, roomId)
+    redis.call("DEL", step)
+    return 1
 end
 
-redis.call("HSET", roomKey, "status", "waiting")
-return 2 -- 房间还有一个人
+redis.call("HSET", roomKey, "status", "1")
+return 2
 LUA;
     }
 }

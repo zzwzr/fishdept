@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Controller\GameController;
 use App\Controller\LoginController;
 use App\Controller\OnlineUserController;
 use App\Controller\RoomController;
@@ -28,6 +29,9 @@ Router::addGroup('/api/v1/', function(){
     Router::get('room/info', [RoomController::class, 'info'], ['operation' => '查看房间信息']);
     Router::post('room/join', [RoomController::class, 'join'], ['operation' => '加入房间']);
     Router::get('room/first', [RoomController::class, 'first'], ['operation' => '查找自己所在的房间信息']);
+
+    Router::post('game/start', [GameController::class, 'start'], ['operation' => '游戏开始']);
+    Router::post('game/move', [GameController::class, 'move'], ['operation' => '游戏状态检查']);
 });
 
 Router::addGroup('/api/v1/user/', function(){
