@@ -6,6 +6,7 @@ use Hyperf\ExceptionHandler\ExceptionHandler;
 use Hyperf\HttpMessage\Stream\SwooleStream;
 use Psr\Http\Message\ResponseInterface;
 use App\Exception\BusinessException;
+use Fig\Http\Message\StatusCodeInterface;
 use Hyperf\Context\Context;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
@@ -19,7 +20,7 @@ class BusinessExceptionHandler extends ExceptionHandler
 
         $data = json_encode(['code' => $throwable->getCode(), 'message' => $throwable->getMessage()], JSON_UNESCAPED_UNICODE);
 
-        return $response->withStatus($throwable->getCode())
+        return $response->withStatus(StatusCodeInterface::STATUS_OK)
                         ->withHeader('Content-type', 'application/json; charset=utf-8')
                         ->withHeader('Access-Control-Allow-Origin', $request->getHeaderLine('origin'))
                         ->withHeader('Access-Control-Allow-Credentials', 'true')

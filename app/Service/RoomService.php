@@ -6,17 +6,17 @@ namespace App\Service;
 
 use App\Constants\ErrorCode;
 use App\Exception\BusinessException;
-use App\Repository\RedisRepository;
+use App\Repository\RoomRepository;
 
 class RoomService
 {
-    public function __construct(private RedisRepository $redisRepository) {}
+    public function __construct(private RoomRepository $roomRepository) {}
 
     public function createRoom(string $name, string $browserId): string
     {
         $roomId = generateRandomCode();
 
-        $this->redisRepository->createRoomHash($roomId, [
+        $this->roomRepository->createRoomHash($roomId, [
             'name'          => $name,
             'player1'       => '',
             'player2'       => '',
@@ -24,7 +24,7 @@ class RoomService
             'created_at'    => date('Y-m-d H:i:s'),
         ]);
 
-        $this->redisRepository->addRoomToSet($roomId);
+        $this->roomRepository->addRoomToSet($roomId);
         $this->joinRoom($roomId, $browserId);
 
         return $roomId;
@@ -32,34 +32,34 @@ class RoomService
 
     public function joinRoom(string $roomId, string $browserId): void
     {
-        if (!$this->redisRepository->existsRoom($roomId)) {
+        if (!$this->roomRepository->existsRoom($roomId)) {
             throw new BusinessException(ErrorCode::BUSINESS_ERROR, '房间不存在');
         }
 
-        $old = $this->redisRepository->getBrowserRoom($browserId);
+        $old = $this->roomRepository->getBrowserRoom($browserId);
         if ($old === $roomId) {
             throw new BusinessException(ErrorCode::BUSINESS_ERROR, '已在该房间');
         }
 
         if ($old) $this->leaveRoom($old, $browserId);
 
-        $p1 = $this->redisRepository->getRoomField($roomId, 'player1');
-        $p2 = $this->redisRepository->getRoomField($roomId, 'player2');
+        $p1 = $this->roomRepository->getRoomField($roomId, 'player1');
+        $p2 = $this->roomRepository->getRoomField($roomId, 'player2');
 
         if ($p1 === '') {
-            $this->redisRepository->setRoomField($roomId, 'player1', $browserId);
+            $this->roomRepository->setRoomField($roomId, 'player1', $browserId);
         } elseif ($p2 === '') {
-            $this->redisRepository->setRoomField($roomId, 'player2', $browserId);
+            $this->roomRepository->setRoomField($roomId, 'player2', $browserId);
         } else {
             throw new BusinessException(ErrorCode::BUSINESS_ERROR, '房间已满');
         }
 
-        $this->redisRepository->setBrowserRoom($browserId, $roomId);
+        $this->roomRepository->setBrowserRoom($browserId, $roomId);
     }
 
     public function listRooms(string $search = ''): array
     {
-        $ids = $this->redisRepository->getAllRoomIds();
+        $ids = $this->roomRepository->getAllRoomIds();
         $result = [];
 
         foreach ($ids as $id) {
@@ -74,7 +74,7 @@ class RoomService
 
     public function infoRoom(string $roomId): array
     {
-        $data = $this->redisRepository->getRoomHash($roomId);
+        $data = $this->roomRepository->getRoomHash($roomId);
         if (empty($data['name'])) {
             return [];
         }
@@ -94,7 +94,7 @@ class RoomService
 
     public function firstRoom(string $browserId): array
     {
-        $roomId = $this->redisRepository->getBrowserRoom($browserId);
+        $roomId = $this->roomRepository->getBrowserRoom($browserId);
         if (!$roomId) return [];
 
         return $this->infoRoom($roomId);
@@ -102,20 +102,14 @@ class RoomService
 
     public function leaveRoom(string $roomId, string $browserId): void
     {
-        if (!$this->redisRepository->existsRoom($roomId)) return;
+        if (!$this->roomRepository->existsRoom($roomId)) return;
 
-        $keys = $this->redisRepository->getKeys($roomId);
+        $keys = $this->roomRepository->getKeys($roomId);
 
-        $ret = $this->redisRepository->runLeaveRoomLua(
+        $ret = $this->roomRepository->runLeaveRoomLua(
             $this->leaveRoomLua(),
-        // return [
-        //     $this->room.$roomId,
-        //     $roomId,
-        //     $this->rooms,
-        //     $this->step.$roomId
-        // ];
             // [$roomKey, $roomId, $this->rooms, $step, $browserId, $this->browserRoom . $browserId]
-            array_merge($keys, [$browserId, $this->redisRepository->browserRoomKey($browserId)])
+            array_merge($keys, [$browserId, $this->roomRepository->browserRoomKey($browserId)])
         );
 
         // if ($ret === 1) {
@@ -123,6 +117,10 @@ class RoomService
         // }
     }
 
+    /**
+     * 避免出现检查两个玩家都不在，未执行删除房间之前，又有人进入房间了的情况
+     * @return string
+     */
     private function leaveRoomLua(): string
     {
         return <<<'LUA'

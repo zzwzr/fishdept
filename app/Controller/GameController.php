@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Request\Game\MoveRequest;
 use App\Request\Game\StartRequest;
 use App\Resource\Common\BaseResource;
 use App\Service\GameService;
@@ -25,8 +26,12 @@ class GameController
         return new BaseResource();
     }
 
-    public function move(StartRequest $request)
+    public function move(MoveRequest $request)
     {
+        $validated = $request->validated();
 
+        $this->gameService->move($validated);
+
+        return new BaseResource();
     }
 }

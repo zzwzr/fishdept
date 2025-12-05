@@ -22,7 +22,9 @@ class MoveRequest extends FormRequest
     public function rules(): array
     {
         return [
-
+            'room_id'       => 'required',
+            'browser_id'    => 'required',
+            'index'         => 'required',
         ];
     }
 }
