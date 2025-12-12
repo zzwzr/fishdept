@@ -6,17 +6,21 @@ namespace App\Service;
 
 use App\Constants\ErrorCode;
 use App\Exception\BusinessException;
+use App\Repository\GameRepository;
 use App\Repository\RoomRepository;
 
 class RoomService
 {
-    public function __construct(private RoomRepository $roomRepository) {}
+    public function __construct(
+        private RoomRepository $roomRepository,
+        private GameRepository $gameRepository
+    ) {}
 
     public function createRoom(string $name, string $browserId): string
     {
         $roomId = generateRandomCode();
 
-        $this->roomRepository->createRoomHash($roomId, [
+        $this->roomRepository->setRoomHash($roomId, [
             'name'          => $name,
             'player1'       => '',
             'player2'       => '',
@@ -27,6 +31,7 @@ class RoomService
         $this->roomRepository->addRoomToSet($roomId);
         $this->joinRoom($roomId, $browserId);
 
+        $this->gameRepository->initGameBoard($roomId);
         return $roomId;
     }
 
@@ -81,6 +86,7 @@ class RoomService
 
         $count = ($data['player1'] ? 1 : 0) + ($data['player2'] ? 1 : 0);
 
+        $board = $this->gameRepository->getBoard($roomId);
         return [
             'number'        => $roomId,
             'name'          => $data['name'],
@@ -88,7 +94,8 @@ class RoomService
             'player2'       => $data['player2'],
             'count'         => $count,
             'status'        => $data['status'],
-            'created_at'    => $data['created_at']
+            'created_at'    => $data['created_at'],
+            'board'         => $board
         ];
     }
 
@@ -108,7 +115,6 @@ class RoomService
 
         $ret = $this->roomRepository->runLeaveRoomLua(
             $this->leaveRoomLua(),
-            // [$roomKey, $roomId, $this->rooms, $step, $browserId, $this->browserRoom . $browserId]
             array_merge($keys, [$browserId, $this->roomRepository->browserRoomKey($browserId)])
         );
 
@@ -119,6 +125,7 @@ class RoomService
 
     /**
      * 避免出现检查两个玩家都不在，未执行删除房间之前，又有人进入房间了的情况
+     * 1.删除浏览器映射的房间，2.删除房间列表中的房间号，3.删除房间设置的步骤，4.删除房间内当前棋局状态
      * @return string
      */
     private function leaveRoomLua(): string

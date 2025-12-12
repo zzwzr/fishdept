@@ -22,7 +22,7 @@ class RoomRepository
 
     public function __construct(private Redis $redis) {}
 
-    public function createRoomHash(string $roomId, array $data): void
+    public function setRoomHash(string $roomId, array $data): void
     {
         $this->redis->hMSet($this->room . $roomId, $data);
     }
@@ -68,14 +68,6 @@ class RoomRepository
     public function getAllRoomIds(): array
     {
         return $this->redis->sMembers($this->rooms);
-    }
-
-    // 删除空房间
-    public function deleteRoomCompletely(string $roomId): void
-    {
-        $this->redis->del($this->room . $roomId);
-        $this->redis->sRem($this->rooms, $roomId);
-        $this->redis->del($this->step . $roomId);
     }
 
     public function runLeaveRoomLua(string $lua, array $args): int

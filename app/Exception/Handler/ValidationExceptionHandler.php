@@ -14,13 +14,16 @@ class ValidationExceptionHandler extends ExceptionHandler
     public function handle(Throwable $throwable, ResponseInterface $response)
     {
         $this->stopPropagation();
+        // $request = Context::get(ServerRequestInterface::class);
 
-        $body = $throwable->validator->errors()->first();
-
+        $data = json_encode(['code' => $throwable->getCode(), 'msg' => $throwable->validator->errors()->first(), 'data' => []], JSON_UNESCAPED_UNICODE);
         return $response->withStatus(StatusCodeInterface::STATUS_UNPROCESSABLE_ENTITY)
                         ->withHeader('Content-type', 'application/json; charset=utf-8')
                         ->withHeader('Access-Control-Allow-Origin', '*')
-                        ->withBody(new SwooleStream(json_encode(['code' => $throwable->status, 'message' => $body])));
+                        // ->withHeader('Access-Control-Allow-Origin', $request->getHeaderLine('origin'))
+                        // ->withHeader('Access-Control-Allow-Credentials', 'true')
+                        // ->withHeader('Access-Control-Allow-Headers', 'Keep-Alive, User-Agent, Cache-Control, Content-Type, Authorization')
+                        ->withBody(new SwooleStream($data));
     }
 
     /**
